@@ -1,0 +1,55 @@
+name: Publish pyisland to PyPI
+
+on:
+  workflow_dispatch: # Trigger manually
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (empty repo is fine)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Create sample package files
+        run: |
+          mkdir -p pyisland
+          cat > pyisland/__init__.py <<'EOF'
+          def hello():
+              return "Hello from pyisland!"
+          EOF
+
+          cat > pyproject.toml <<'EOF'
+          [build-system]
+          requires = ["setuptools>=61.0"]
+          build-backend = "setuptools.build_meta"
+
+          [project]
+          name = "pyisland"
+          version = "0.1.0"
+          description = "A sample Python package created in a GitHub Actions workflow"
+          authors = [{ name="Your Name", email="you@example.com" }]
+          license = { text = "MIT" }
+          requires-python = ">=3.7"
+          classifiers = [
+              "Programming Language :: Python :: 3",
+              "License :: OSI Approved :: MIT License"
+          ]
+          EOF
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*
